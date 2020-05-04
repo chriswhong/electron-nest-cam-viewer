@@ -1,4 +1,8 @@
 .App {
+  padding: 20px;
+}
+
+.header-container {
   text-align: center;
 }
 
