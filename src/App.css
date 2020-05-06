@@ -40,3 +40,31 @@
     transform: rotate(360deg);
   }
 }
+
+.camera-list-item {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+}
+
+.camera-list-item:first-child {
+  border-top: 1px solid #ddd;
+}
+
+.camera-name {
+  flex: 1;
+  display: inline-block;
+  line-height: 33px;
+}
+
+.camera-button {
+  display: inline-block;
+  background: #696969;
+  padding: 3px;
+  height: 25px;
+  width: 30px;
+  color: #fff;
+  text-align: center;
+  margin: 4px;
+  border-radius: 2px;
+  font-size: 13px;
+}

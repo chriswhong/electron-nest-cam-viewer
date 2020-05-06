@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faVideo, faTrash } from '@fortawesome/free-solid-svg-icons'
+
+import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
 
 const { ipc } = window
@@ -28,6 +32,10 @@ function App () {
     ipc.send('open-camera', id)
   }
 
+  const removeCamera = (id) => {
+    setCameras(ipc.sendSync('remove-camera', id))
+  }
+
   useEffect(() => {
     fetchCameras()
     ipc.on('validate-camera-response', (event, response) => {
@@ -45,8 +53,14 @@ function App () {
     })
   }, [])
 
-  const camerasList = cameras.map(({ id }) => {
-    return (<li key={id} onClick={() => { openCamera(id) }}>{id}</li>)
+  const camerasList = cameras.map(({ id, name }) => {
+    return (
+      <div className='camera-list-item' key={id}>
+        <div className='camera-name'>{name}</div>
+        <div className='camera-button' onClick={() => { openCamera(id) }}><FontAwesomeIcon icon={faVideo} /></div>
+        <div className='camera-button' onClick={() => { removeCamera(id) }}><FontAwesomeIcon icon={faTrash} /></div>
+      </div>
+    )
   })
 
   return (
@@ -65,8 +79,8 @@ function App () {
       <hr/>
       <div className='add-camera-container'>
         <h4>Add a Camera</h4>
-        <input type="text" id="cam-id" name="cam-id" placeholder="xxXxXXXxxx" onChange={e => setId(e.target.value)} />
-        <input type="password" id="password" name="password" placeholder="password" onChange={e => setPassword(e.target.value)}/>
+        <input type="text" id="cam-id" name="cam-id" placeholder="xxXxXXXxxx" value={id} onChange={e => setId(e.target.value)} />
+        <input type="password" id="password" name="password" placeholder="password" value={password} onChange={e => setPassword(e.target.value)}/>
         {
           validatingCamera && (
             <div>...</div>

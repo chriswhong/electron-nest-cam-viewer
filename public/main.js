@@ -48,7 +48,7 @@ const openCamera = ({ id, password }) => {
 // checks to see if the password is valid for the camera by opening
 // a browserWindow, filling out the password inout, and checking the page
 // for an 'error' class
-const checkPassword = (id, password) => {
+const checkPassword = (id, password = '') => {
   let error = null
   ipcMain.on('password-error', (event, message) => {
     error = message
@@ -81,12 +81,16 @@ const checkPassword = (id, password) => {
       // wait 3.25 seconds, make sure error has been set, resolve it
       // if error is null, something went wrong with validation
       setTimeout(() => {
+        const name = camWindow.getTitle().split(' |')[0]
         camWindow.destroy()
         ipcMain.removeHandler('password-error')
         if (error === null) {
           reject(new Error('something went wrong with validation'))
         } else {
-          resolve(error)
+          resolve({
+            name,
+            error
+          })
         }
       }, 3250)
     })
@@ -95,8 +99,13 @@ const checkPassword = (id, password) => {
 
 // add the camera to the datastore
 const addCamera = (camera) => {
-  const cameras = store.get('cameras')
-  cameras.push(camera)
+  let cameras = store.get('cameras')
+  if (cameras) {
+    cameras.push(camera)
+  } else {
+    cameras = [camera]
+  }
+
   store.set('cameras', cameras)
 }
 
@@ -122,7 +131,8 @@ const showSettings = () => {
 
 // fetch the cameras list from the store
 ipcMain.on('fetch-cameras', (event) => {
-  event.returnValue = store.get('cameras')
+  const cameras = store.get('cameras')
+  event.returnValue = cameras || []
 })
 
 // open a camera window
@@ -132,9 +142,17 @@ ipcMain.on('open-camera', (event, id) => {
   openCamera(credentials)
 })
 
+// remove camera from store
+ipcMain.on('remove-camera', (event, id) => {
+  // find camera in list
+  let cameras = store.get('cameras')
+  cameras = cameras.filter(d => d.id !== id)
+  store.set('cameras', cameras)
+  event.returnValue = cameras || []
+})
+
 // validate the id and password combination
 ipcMain.on('validate-camera', async (event, { id, password }) => {
-  console.log('validating', id, password)
   const cameraURL = `https://video.nest.com/live/${id}`
 
   try {
@@ -159,9 +177,7 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
         })
       } else {
         // now see if the password is valid
-        console.log('checking password', id, password)
-        const passwordError = await checkPassword(id, password)
-        console.log('passwordError', passwordError)
+        const { name, error: passwordError } = await checkPassword(id, password)
         if (passwordError) {
           event.sender.send('validate-camera-response', {
             status: 'error',
@@ -170,7 +186,8 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
         } else {
           addCamera({
             id,
-            password
+            password,
+            name
           })
           event.sender.send('validate-camera-response', {
             status: 'success',
@@ -180,17 +197,20 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
       }
     } else {
       // otherwise, this is a public camera page
+      const { name } = await checkPassword(id)
+
       addCamera({
         id,
-        password
+        password,
+        name
       })
-      return {
+      event.sender.send('validate-camera-response', {
         status: 'success',
         message: 'success'
-      }
+      })
     }
   } catch (e) {
-    console.log('error', e)
+    console.error('error', e)
   }
 })
 
