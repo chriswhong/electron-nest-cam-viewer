@@ -1,10 +1,15 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, BrowserView, ipcMain } = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
 const fetch = require('node-fetch')
 const Store = require('electron-store')
 
 const store = new Store()
+
+let mainWindow
+
+const WIDTH = 350
+const HEIGHT = 560
 
 // opens a new camera in a browserWindow
 const openCamera = ({ id, password }) => {
@@ -97,6 +102,37 @@ const checkPassword = (id, password = '') => {
   })
 }
 
+// opens a new camera in a browserWindow
+const showCamera = ({ id, password }) => {
+  const view = new BrowserView()
+  mainWindow.setBrowserView(view)
+  const VIEWHEIGHT = 196
+  view.setBounds({ x: 0, y: HEIGHT - VIEWHEIGHT, width: WIDTH, height: VIEWHEIGHT })
+  // load the nest cam sharing page
+  view.webContents.loadURL(`https://video.nest.com/live/${id}?autoplay=1`)
+
+  view.webContents.on('did-finish-load', () => {
+    // override the CSS to make the video fill the viewport
+    // also ignore clicks on the video area (disable pausing)
+    view.webContents.insertCSS(`
+      header, #details, #meet-nest-cam, footer, .vjs-live-label, .vjs-big-play-button {
+        display: none !important;
+      }
+      #video {
+        margin-bottom: 0 !important;
+      }
+      .vjs-tech {
+        pointer-events: none;
+      }
+    `)
+
+    // fill in the password input and submit the form
+    view.webContents.executeJavaScript(`
+      $(".secure-password-input").first().val("${password}"); $("#secure-password-form").submit()
+    `)
+  })
+}
+
 // add the camera to the datastore
 const addCamera = (camera) => {
   let cameras = store.get('cameras')
@@ -112,12 +148,14 @@ const addCamera = (camera) => {
 // show the settings screen
 const showSettings = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: isDev ? 600 : 300,
-    height: 600,
+  mainWindow = new BrowserWindow({
+    width: isDev ? (WIDTH + 300) : WIDTH,
+    height: HEIGHT,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
-    }
+    },
+    titleBarStyle: 'hidden',
+    resizable: false
   })
 
   mainWindow.loadURL(isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, '../build/index.html')}`)
@@ -149,6 +187,13 @@ ipcMain.on('remove-camera', (event, id) => {
   cameras = cameras.filter(d => d.id !== id)
   store.set('cameras', cameras)
   event.returnValue = cameras || []
+})
+
+// open a camera window
+ipcMain.on('show-camera', (event, id) => {
+  // find camera in list
+  const credentials = store.get('cameras').find(d => d.id === id)
+  showCamera(credentials)
 })
 
 // validate the id and password combination

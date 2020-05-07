@@ -1,9 +1,16 @@
 .App {
-  padding: 20px;
+  color: #333333;
 }
 
 .header-container {
+  background: #5897F0;
+  color: #FFF;
   text-align: center;
+  padding: 40px 0 14px;
+}
+
+.header-container.title {
+  font-weight: 800;
 }
 
 .App-logo {
@@ -41,13 +48,26 @@
   }
 }
 
+.camera-list-container {
+  padding: 40px;
+}
+
+.camera-list-container ul {
+  padding: 0;
+}
+
 .camera-list-item {
+  font-size: .9rem;
   display: flex;
   border-bottom: 1px solid #ddd;
 }
 
-.camera-list-item:first-child {
-  border-top: 1px solid #ddd;
+.camera-list-item:hover {
+  cursor: pointer;
+}
+
+.camera-list-item:hover .camera-button {
+  display: inline-block;
 }
 
 .camera-name {
@@ -57,14 +77,23 @@
 }
 
 .camera-button {
-  display: inline-block;
-  background: #696969;
-  padding: 3px;
-  height: 25px;
-  width: 30px;
-  color: #fff;
-  text-align: center;
-  margin: 4px;
+  color: #a0a0a0;
+  margin: 7px;
   border-radius: 2px;
   font-size: 13px;
+  height: 20px;
+  width: 20px;
+  text-align: center;
+}
+
+.camera-button:hover {
+  background: #ecebeb;
+}
+
+.__react_component_tooltip {
+  padding: 3px 7px;
+}
+
+h5 {
+  font-weight: 700;
 }

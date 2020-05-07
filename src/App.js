@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
+import ReactTooltip from 'react-tooltip'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faVideo, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faVideo, faTrash, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
@@ -36,6 +37,10 @@ function App () {
     setCameras(ipc.sendSync('remove-camera', id))
   }
 
+  const showCamera = (id) => {
+    ipc.send('show-camera', id)
+  }
+
   useEffect(() => {
     fetchCameras()
     ipc.on('validate-camera-response', (event, response) => {
@@ -53,12 +58,16 @@ function App () {
     })
   }, [])
 
+  useEffect(() => {
+    ReactTooltip.rebuild()
+  }, [cameras])
+
   const camerasList = cameras.map(({ id, name }) => {
     return (
-      <div className='camera-list-item' key={id}>
+      <div className='camera-list-item' key={id} onClick={() => { showCamera(id) }}>
         <div className='camera-name'>{name}</div>
-        <div className='camera-button' onClick={() => { openCamera(id) }}><FontAwesomeIcon icon={faVideo} /></div>
-        <div className='camera-button' onClick={() => { removeCamera(id) }}><FontAwesomeIcon icon={faTrash} /></div>
+        <div className='camera-button' data-tip='Pop-out Camera' onClick={() => { openCamera(id) }}><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
+        <div className='camera-button' data-tip='Delete Camera' onClick={() => { removeCamera(id) }}><FontAwesomeIcon icon={faTrash} /></div>
       </div>
     )
   })
@@ -66,12 +75,11 @@ function App () {
   return (
     <div className="App">
       <div className='header-container'>
-        <h2 className="title">Cam View</h2>
+        <h1 className="title"><FontAwesomeIcon icon={faVideo} /> Cam View</h1>
         <p>A Desktop Viewer for Nest Cams</p>
       </div>
-      <hr/>
       <div className='camera-list-container'>
-        <h4>Cameras</h4>
+        <h5>Cameras</h5>
         <ul>
           {camerasList}
         </ul>
@@ -93,6 +101,7 @@ function App () {
         }
         <p>{error}</p>
       </div>
+      <ReactTooltip place="bottom" type="dark" effect="solid"/>
     </div>
   )
 }
