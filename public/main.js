@@ -7,6 +7,7 @@ const Store = require('electron-store')
 const store = new Store()
 
 let mainWindow
+let cameraBrowserView
 
 const WIDTH = 350
 const HEIGHT = 560
@@ -104,17 +105,17 @@ const checkPassword = (id, password = '') => {
 
 // opens a new camera in a browserWindow
 const showCamera = ({ id, password }) => {
-  const view = new BrowserView()
-  mainWindow.setBrowserView(view)
+  cameraBrowserView = new BrowserView()
+  mainWindow.setBrowserView(cameraBrowserView)
   const VIEWHEIGHT = 196
-  view.setBounds({ x: 0, y: HEIGHT - VIEWHEIGHT, width: WIDTH, height: VIEWHEIGHT })
+  cameraBrowserView.setBounds({ x: 0, y: 22, width: WIDTH, height: VIEWHEIGHT })
   // load the nest cam sharing page
-  view.webContents.loadURL(`https://video.nest.com/live/${id}?autoplay=1`)
+  cameraBrowserView.webContents.loadURL(`https://video.nest.com/live/${id}?autoplay=1`)
 
-  view.webContents.on('did-finish-load', () => {
+  cameraBrowserView.webContents.on('did-finish-load', () => {
     // override the CSS to make the video fill the viewport
     // also ignore clicks on the video area (disable pausing)
-    view.webContents.insertCSS(`
+    cameraBrowserView.webContents.insertCSS(`
       header, #details, #meet-nest-cam, footer, .vjs-live-label, .vjs-big-play-button {
         display: none !important;
       }
@@ -127,7 +128,7 @@ const showCamera = ({ id, password }) => {
     `)
 
     // fill in the password input and submit the form
-    view.webContents.executeJavaScript(`
+    cameraBrowserView.webContents.executeJavaScript(`
       $(".secure-password-input").first().val("${password}"); $("#secure-password-form").submit()
     `)
   })
@@ -149,7 +150,7 @@ const addCamera = (camera) => {
 const showSettings = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: isDev ? (WIDTH + 300) : WIDTH,
+    width: WIDTH,
     height: HEIGHT,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
@@ -194,6 +195,14 @@ ipcMain.on('show-camera', (event, id) => {
   // find camera in list
   const credentials = store.get('cameras').find(d => d.id === id)
   showCamera(credentials)
+  event.returnValue = id
+})
+
+ipcMain.on('hide-camera', (event, id) => {
+  // remove the browserView
+  mainWindow.setBrowserView(null)
+  cameraBrowserView.destroy()
+  event.returnValue = ''
 })
 
 // validate the id and password combination

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ReactTooltip from 'react-tooltip'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faVideo, faTrash, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
+import { faVideo, faTrash, faExternalLinkAlt, faTimes } from '@fortawesome/free-solid-svg-icons'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
@@ -14,6 +14,7 @@ function App () {
   const [error, setError] = useState('')
   const [validatingCamera, setValidatingCamera] = useState(false)
   const [cameras, setCameras] = useState([])
+  const [selectedCamera, setSelectedCamera] = useState('')
 
   const fetchCameras = () => {
     setCameras(ipc.sendSync('fetch-cameras'))
@@ -29,7 +30,8 @@ function App () {
     })
   }
 
-  const openCamera = (id) => {
+  const openCamera = (e, id) => {
+    hideCamera(e)
     ipc.send('open-camera', id)
   }
 
@@ -38,7 +40,12 @@ function App () {
   }
 
   const showCamera = (id) => {
-    ipc.send('show-camera', id)
+    setSelectedCamera(ipc.sendSync('show-camera', id))
+  }
+
+  const hideCamera = (e) => {
+    e.stopPropagation()
+    setSelectedCamera(ipc.sendSync('hide-camera'))
   }
 
   useEffect(() => {
@@ -63,10 +70,21 @@ function App () {
   }, [cameras])
 
   const camerasList = cameras.map(({ id, name }) => {
+    const selected = id === selectedCamera
     return (
-      <div className='camera-list-item' key={id} onClick={() => { showCamera(id) }}>
+      <div className={`camera-list-item ${selected && 'selected'}`} key={id} onClick={() => { showCamera(id) }}>
+        {
+          selected && (
+            <div className='selected-container'>
+              <div className='selected-marker'/>
+              <div className='selected-close-button' onClick={hideCamera}>
+                <FontAwesomeIcon icon={faTimes}/>
+              </div>
+            </div>
+          )
+        }
         <div className='camera-name'>{name}</div>
-        <div className='camera-button' data-tip='Pop-out Camera' onClick={() => { openCamera(id) }}><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
+        <div className='camera-button' data-tip='Pop-out Camera' onClick={(e) => { openCamera(e, id) }}><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
         <div className='camera-button' data-tip='Delete Camera' onClick={() => { removeCamera(id) }}><FontAwesomeIcon icon={faTrash} /></div>
       </div>
     )
@@ -74,32 +92,31 @@ function App () {
 
   return (
     <div className="App">
-      <div className='header-container'>
+      <div className={`header-container ${selectedCamera && 'collapsed'}`}>
         <h1 className="title"><FontAwesomeIcon icon={faVideo} /> Cam View</h1>
         <p>A Desktop Viewer for Nest Cams</p>
       </div>
       <div className='camera-list-container'>
         <h5>Cameras</h5>
-        <ul>
+        <div className='camera-list'>
           {camerasList}
-        </ul>
-      </div>
-      <hr/>
-      <div className='add-camera-container'>
-        <h4>Add a Camera</h4>
-        <input type="text" id="cam-id" name="cam-id" placeholder="xxXxXXXxxx" value={id} onChange={e => setId(e.target.value)} />
-        <input type="password" id="password" name="password" placeholder="password" value={password} onChange={e => setPassword(e.target.value)}/>
-        {
-          validatingCamera && (
-            <div>...</div>
-          )
-        }
-        {
-          !validatingCamera && (
-            <button onClick={validateCamera}>Add</button>
-          )
-        }
-        <p>{error}</p>
+          <div className='add-camera-container' >
+            <h4>Add a Camera</h4>
+            <input type="text" id="cam-id" name="cam-id" placeholder="xxXxXXXxxx" value={id} onChange={e => setId(e.target.value)} />
+            <input type="password" id="password" name="password" placeholder="password" value={password} onChange={e => setPassword(e.target.value)}/>
+            {
+              validatingCamera && (
+                <div>...</div>
+              )
+            }
+            {
+              !validatingCamera && (
+                <button onClick={validateCamera}>Add</button>
+              )
+            }
+            <p>{error}</p>
+          </div>
+        </div>
       </div>
       <ReactTooltip place="bottom" type="dark" effect="solid"/>
     </div>

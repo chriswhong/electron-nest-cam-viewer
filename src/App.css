@@ -1,12 +1,38 @@
+html, body, #root, .App {
+  height: 100%;
+}
+
 .App {
   color: #333333;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .header-container {
   background: #5897F0;
   color: #FFF;
   text-align: center;
-  padding: 40px 0 14px;
+  padding: 80px 0;
+  -webkit-app-region: drag;
+  height: 250px;
+}
+
+.header-container.collapsed {
+  text-align: left;
+  padding: 221px 40px 0 40px
+}
+
+.header-container.collapsed .title {
+  font-size: 14px;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.header-container.collapsed p {
+  font-size: 12px;
+  display: inline-block;
+  margin-bottom: 0;
 }
 
 .header-container.title {
@@ -50,6 +76,8 @@
 
 .camera-list-container {
   padding: 40px;
+  flex: 1;
+  overflow-y: scroll;
 }
 
 .camera-list-container ul {
@@ -60,6 +88,7 @@
   font-size: .9rem;
   display: flex;
   border-bottom: 1px solid #ddd;
+  position: relative;
 }
 
 .camera-list-item:hover {
@@ -68,6 +97,44 @@
 
 .camera-list-item:hover .camera-button {
   display: inline-block;
+}
+
+.selected-container {
+  height: 34px;
+  width: 34px;
+  position: absolute;
+  left: -34px;
+}
+
+.selected-marker {
+  background: #5897F0;
+  height: 10px;
+  width: 10px;
+  border-radius: 5px;
+  position: relative;
+  top: 12px;
+  left: 12px;
+}
+
+.camera-list-item:hover .selected-marker {
+  display: none;
+}
+
+.selected-close-button {
+  color: #5897F0;
+  position: relative;
+  position: relative;
+  top: 6px;
+  left: 12px;
+  display: none;
+}
+
+.selected-close-button:hover {
+  color: #3A79D2;
+}
+
+.camera-list-item:hover .selected-close-button {
+  display: block;
 }
 
 .camera-name {
@@ -81,9 +148,10 @@
   margin: 7px;
   border-radius: 2px;
   font-size: 13px;
-  height: 20px;
-  width: 20px;
+  height: 19px;
+  width: 19px;
   text-align: center;
+  display: none;
 }
 
 .camera-button:hover {
