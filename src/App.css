@@ -75,7 +75,7 @@ html, body, #root, .App {
 }
 
 .camera-list-container {
-  padding: 40px;
+  padding: 25px 40px;
   flex: 1;
   overflow-y: scroll;
 }
@@ -91,12 +91,22 @@ html, body, #root, .App {
   position: relative;
 }
 
+.camera-list-item:last-child {
+  border: none;
+}
+
 .camera-list-item:hover {
   cursor: pointer;
 }
 
 .camera-list-item:hover .camera-button {
   display: inline-block;
+}
+
+.no-cameras {
+  text-align: center;
+  padding: 40px 0;
+  font-weight: 200;
 }
 
 .selected-container {
@@ -164,4 +174,90 @@ html, body, #root, .App {
 
 h5 {
   font-weight: 700;
+}
+
+.add-camera-button {
+  font-size: .9rem;
+  color: #929292;
+}
+
+.add-camera-button:hover {
+  color: #3A79D2;
+  cursor: pointer;
+}
+
+.add-camera-button svg {
+  margin-right: 5px;
+}
+
+input {
+  height: 38px;
+  border: 1px solid #dedede;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  padding: 0 8px;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+input:focus, button:focus {
+  outline:0;
+}
+
+.password-input-container {
+  position: relative;
+}
+
+.password-input-container svg {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: #5897F0;
+}
+
+#password {
+  padding-left: 33px;
+}
+
+::placeholder {
+  color: #c7c7c7;
+}
+
+.cancel-link {
+  display: inline-block;
+  font-size: .8rem;
+  padding: 0 12px;
+  background: #fff;
+  font-weight: 400;
+  color: #616161;
+}
+
+.cancel-link:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+button {
+  border: none;
+  background: #5897F0;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 3px;
+  width: 100px;
+}
+
+button:disabled {
+  background: #9cbeef;
+}
+
+.error-text {
+  display: inline-block;
+  font-size: .85rem;
+  color: red;
+}
+
+hr {
+  margin-top: 0;
 }

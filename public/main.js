@@ -15,8 +15,8 @@ const HEIGHT = 560
 // opens a new camera in a browserWindow
 const openCamera = ({ id, password }) => {
   const camWindow = new BrowserWindow({
-    width: 508,
-    height: 306
+    width: WIDTH,
+    height: parseInt(WIDTH * 0.56) + 22
   })
   // load the nest cam sharing page
   camWindow.loadURL(`https://video.nest.com/live/${id}?autoplay=1`)
@@ -199,9 +199,11 @@ ipcMain.on('show-camera', (event, id) => {
 })
 
 ipcMain.on('hide-camera', (event, id) => {
-  // remove the browserView
-  mainWindow.setBrowserView(null)
-  cameraBrowserView.destroy()
+  // remove the browserView if it exists
+  if (mainWindow.getBrowserView()) {
+    mainWindow.setBrowserView(null)
+    cameraBrowserView.destroy()
+  }
   event.returnValue = ''
 })
 
@@ -216,8 +218,9 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
     if (html.includes('not-found')) {
       event.sender.send('validate-camera-response', {
         status: 'error',
-        message: `${id} does not seem to be a valid camera id`
+        message: 'invalid camera url'
       })
+      return
     }
 
     // next check to see if it requires a password
@@ -227,7 +230,7 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
       if (password === '') {
         event.sender.send('validate-camera-response', {
           status: 'error',
-          message: `the camera ${id} requires a password`
+          message: 'password-protected'
         })
       } else {
         // now see if the password is valid
@@ -245,7 +248,7 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
           })
           event.sender.send('validate-camera-response', {
             status: 'success',
-            message: 'success'
+            message: id
           })
         }
       }
@@ -260,7 +263,7 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
       })
       event.sender.send('validate-camera-response', {
         status: 'success',
-        message: 'success'
+        message: id
       })
     }
   } catch (e) {
@@ -283,4 +286,5 @@ app.on('window-all-closed', () => {
 
 // called when the dock icon is clicked
 app.on('activate', () => {
+  showSettings()
 })
