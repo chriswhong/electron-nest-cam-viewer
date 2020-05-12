@@ -6,33 +6,35 @@ const Store = require('electron-store')
 
 const store = new Store()
 
+const popOuts = {}
+
 let mainWindow
 let cameraBrowserView
 
 const WIDTH = 350
 const HEIGHT = 560
 
-// opens a new camera in a browserWindow
-const openCamera = ({ id, password }) => {
-  const camWindow = new BrowserWindow({
+// opens a new camera in a browserWindow (pop-out)
+const popoutCamera = ({ id, password }) => {
+  popOuts[id] = new BrowserWindow({
     width: WIDTH,
     height: parseInt(WIDTH * 0.56) + 22
   })
   // load the nest cam sharing page
-  camWindow.loadURL(`https://video.nest.com/live/${id}?autoplay=1`)
+  popOuts[id].loadURL(`https://video.nest.com/live/${id}?autoplay=1`)
 
   // keep a fixed aspect ratio when the window is resized (MacOS only)
-  camWindow.setAspectRatio(16 / 9)
+  popOuts[id].setAspectRatio(16 / 9)
 
   // make the window stay on top
-  camWindow.setAlwaysOnTop(true, 'floating', 1)
+  popOuts[id].setAlwaysOnTop(true, 'floating', 1)
   // even if other apps are full screen
-  camWindow.setVisibleOnAllWorkspaces(true)
+  popOuts[id].setVisibleOnAllWorkspaces(true)
 
-  camWindow.webContents.on('did-finish-load', () => {
+  popOuts[id].webContents.on('did-finish-load', () => {
     // override the CSS to make the video fill the viewport
     // also ignore clicks on the video area (disable pausing)
-    camWindow.webContents.insertCSS(`
+    popOuts[id].webContents.insertCSS(`
       header, #details, #meet-nest-cam, footer, .vjs-live-label, .vjs-big-play-button {
         display: none !important;
       }
@@ -45,8 +47,14 @@ const openCamera = ({ id, password }) => {
     `)
 
     // fill in the password input and submit the form
-    camWindow.webContents.executeJavaScript(`
+    // poll every second to see if the camera has timed out
+    popOuts[id].webContents.executeJavaScript(`
       $(".secure-password-input").first().val("${password}"); $("#secure-password-form").submit()
+      setInterval(() => {
+        if ($('.end-state-wrapper:visible').length) {
+          ipc.send('camera-stopped', '${id}')
+        }
+      }, 1000)
     `)
   })
 }
@@ -103,9 +111,13 @@ const checkPassword = (id, password = '') => {
   })
 }
 
-// opens a new camera in a browserWindow
+// opens a new camera in a browserView (main window viewer)
 const showCamera = ({ id, password }) => {
-  cameraBrowserView = new BrowserView()
+  cameraBrowserView = new BrowserView({
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
+  })
   mainWindow.setBrowserView(cameraBrowserView)
   const VIEWHEIGHT = 196
   cameraBrowserView.setBounds({ x: 0, y: 22, width: WIDTH, height: VIEWHEIGHT })
@@ -128,13 +140,19 @@ const showCamera = ({ id, password }) => {
     `)
 
     // fill in the password input and submit the form
+    // poll every second to see if the camera has timed out
     cameraBrowserView.webContents.executeJavaScript(`
       $(".secure-password-input").first().val("${password}"); $("#secure-password-form").submit()
+      setInterval(() => {
+        if ($('.end-state-wrapper:visible').length) {
+          ipc.send('camera-stopped', 'main-window')
+        }
+      }, 1000)
     `)
   })
 }
 
-// add the camera to the datastore
+// add a new camera to the datastore
 const addCamera = (camera) => {
   let cameras = store.get('cameras')
   if (cameras) {
@@ -178,7 +196,7 @@ ipcMain.on('fetch-cameras', (event) => {
 ipcMain.on('open-camera', (event, id) => {
   // find camera in list
   const credentials = store.get('cameras').find(d => d.id === id)
-  openCamera(credentials)
+  popoutCamera(credentials)
 })
 
 // remove camera from store
@@ -190,7 +208,7 @@ ipcMain.on('remove-camera', (event, id) => {
   event.returnValue = cameras || []
 })
 
-// open a camera window
+// load camera in the main window
 ipcMain.on('show-camera', (event, id) => {
   // find camera in list
   const credentials = store.get('cameras').find(d => d.id === id)
@@ -207,6 +225,17 @@ ipcMain.on('hide-camera', (event, id) => {
   event.returnValue = ''
 })
 
+// reload cameras when they timeout
+ipcMain.on('camera-stopped', (event, value) => {
+  console.log('camera-stopped', value)
+  // handle main-window stopped
+  if (value === 'main-window') {
+    cameraBrowserView.webContents.reload()
+  } else {
+    popOuts[value].webContents.reload()
+  }
+})
+
 // validate the id and password combination
 ipcMain.on('validate-camera', async (event, { id, password }) => {
   const cameraURL = `https://video.nest.com/live/${id}`
@@ -214,7 +243,7 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
   try {
     const html = await fetch(cameraURL).then(d => d.text())
 
-    // first make sure it's valid
+    // first make sure it's actuall a camera id
     if (html.includes('not-found')) {
       event.sender.send('validate-camera-response', {
         status: 'error',
@@ -224,7 +253,6 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
     }
 
     // next check to see if it requires a password
-
     if (html.includes('Password Protected Live Stream')) {
       // if password is blank, respond with message asking for one
       if (password === '') {
@@ -275,6 +303,7 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // open the main window
   showSettings()
 })
 
@@ -286,5 +315,6 @@ app.on('window-all-closed', () => {
 
 // called when the dock icon is clicked
 app.on('activate', () => {
+  // open the main window
   showSettings()
 })

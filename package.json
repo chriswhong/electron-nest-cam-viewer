@@ -1,8 +1,13 @@
 {
   "name": "cam-view",
   "version": "0.1.0",
+  "license": "MIT",
+  "description": "A Desktop Viewer for Nest Cams",
+  "author": {
+    "name": "Chris Whong"
+  },
   "private": true,
-  "main": "public/main.js",
+  "main": "public/electron.js",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.28",
     "@fortawesome/free-regular-svg-icons": "^5.13.0",
@@ -28,7 +33,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "dev": "concurrently \"BROWSER=none yarn start\" \"wait-on http://localhost:3000 && electron .\""
+    "dev": "concurrently \"BROWSER=none yarn start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "./node_modules/.bin/electron-builder build",
+    "preelectron-pack": "yarn build"
   },
   "eslintConfig": {
     "extends": [
@@ -54,11 +61,30 @@
   "devDependencies": {
     "electron": "^8.2.5",
     "electron-builder": "^22.6.0",
-    "electron-rebuild": "^1.10.1",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1"
-  }
+  },
+  "build": {
+    "appId": "com.example.cam-view",
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "extraMetadata": {
+      "main": "build/electron.js"
+    },
+    "mac": {
+      "icon": "build/icon.icns"
+    },
+    "dmg": {
+      "icon": "build/icon.icns"
+    }
+  },
+  "homepage": "./"
 }

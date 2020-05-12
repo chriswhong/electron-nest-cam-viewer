@@ -46,6 +46,7 @@ function App () {
   }
 
   const openCamera = (e, id) => {
+    e.stopPropagation()
     // if it's the currently selected camera, hide it
     if (id === selectedCamera) {
       hideCamera(e)
