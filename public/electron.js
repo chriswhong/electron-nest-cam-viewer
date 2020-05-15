@@ -1,8 +1,9 @@
-const { app, BrowserWindow, BrowserView, ipcMain } = require('electron')
+const { app, screen, BrowserWindow, BrowserView, ipcMain } = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
 const fetch = require('node-fetch')
 const Store = require('electron-store')
+const keytar = require('keytar')
 
 const store = new Store()
 
@@ -11,11 +12,24 @@ const popOuts = {}
 let mainWindow
 let cameraBrowserView
 
+const SERVICE_NAME = 'cam-view'
 const WIDTH = 350
 const HEIGHT = 560
 
+let saveBoundsCookie
+
+const saveBoundsSoon = () => {
+  if (saveBoundsCookie) clearTimeout(saveBoundsCookie)
+  saveBoundsCookie = setTimeout(() => {
+    saveBoundsCookie = undefined
+    const bounds = mainWindow.getNormalBounds()
+    store.set('mainWindow', { bounds })
+    console.log(store)
+  }, 1000)
+}
+
 // opens a new camera in a browserWindow (pop-out)
-const popoutCamera = ({ id, password }) => {
+const popoutCamera = (id, password) => {
   popOuts[id] = new BrowserWindow({
     width: WIDTH,
     height: parseInt(WIDTH * 0.56) + 22
@@ -56,6 +70,10 @@ const popoutCamera = ({ id, password }) => {
         }
       }, 1000)
     `)
+
+    popOuts[id].on('close', (event) => {
+      popOuts[id] = null
+    })
   })
 }
 
@@ -112,7 +130,7 @@ const checkPassword = (id, password = '') => {
 }
 
 // opens a new camera in a browserView (main window viewer)
-const showCamera = ({ id, password }) => {
+const showCamera = (id, password) => {
   cameraBrowserView = new BrowserView({
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
@@ -153,21 +171,27 @@ const showCamera = ({ id, password }) => {
 }
 
 // add a new camera to the datastore
-const addCamera = (camera) => {
+const addCamera = (id, password, name) => {
   let cameras = store.get('cameras')
   if (cameras) {
-    cameras.push(camera)
+    cameras.push({ id, name })
   } else {
-    cameras = [camera]
+    cameras = [{ id, name }]
+  }
+
+  // store password in keytar
+  if (password) {
+    keytar.setPassword(SERVICE_NAME, id, password)
   }
 
   store.set('cameras', cameras)
 }
 
 // show the settings screen
-const showSettings = () => {
+const loadMainWindow = () => {
   // Create the browser window.
-  mainWindow = new BrowserWindow({
+  const bounds = store.get('mainWindow.bounds')
+  const options = {
     width: WIDTH,
     height: HEIGHT,
     webPreferences: {
@@ -175,7 +199,29 @@ const showSettings = () => {
     },
     titleBarStyle: 'hidden',
     resizable: false
-  })
+  }
+
+  // from https://github.com/electron/electron/issues/526#issuecomment-563010533
+  if (bounds) {
+    const area = screen.getDisplayMatching(bounds).workArea
+    // If the saved position still valid (the window is entirely inside the display area), use it.
+    if (
+      bounds.x >= area.x &&
+      bounds.y >= area.y &&
+      bounds.x + bounds.width <= area.x + area.width &&
+      bounds.y + bounds.height <= area.y + area.height
+    ) {
+      options.x = bounds.x
+      options.y = bounds.y
+    }
+    // If the saved size is still valid, use it.
+    if (bounds.width <= area.width || bounds.height <= area.height) {
+      options.width = bounds.width
+      options.height = bounds.height
+    }
+  }
+
+  mainWindow = new BrowserWindow(options)
 
   mainWindow.loadURL(isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, '../build/index.html')}`)
 
@@ -184,6 +230,18 @@ const showSettings = () => {
     // BrowserWindow.addDevToolsExtension('<location to your react chrome extension>');
     mainWindow.webContents.openDevTools()
   }
+
+  mainWindow.on('close', (event) => {
+    if (app.quitting) {
+      mainWindow = null
+    } else {
+      event.preventDefault()
+      mainWindow.hide()
+    }
+  })
+
+  mainWindow.on('resize', saveBoundsSoon)
+  mainWindow.on('move', saveBoundsSoon)
 }
 
 // fetch the cameras list from the store
@@ -192,11 +250,11 @@ ipcMain.on('fetch-cameras', (event) => {
   event.returnValue = cameras || []
 })
 
-// open a camera window
-ipcMain.on('open-camera', (event, id) => {
+// pop out a camera window
+ipcMain.on('open-camera', async (event, id) => {
   // find camera in list
-  const credentials = store.get('cameras').find(d => d.id === id)
-  popoutCamera(credentials)
+  const password = await keytar.getPassword(SERVICE_NAME, id)
+  popoutCamera(id, password)
 })
 
 // remove camera from store
@@ -205,14 +263,17 @@ ipcMain.on('remove-camera', (event, id) => {
   let cameras = store.get('cameras')
   cameras = cameras.filter(d => d.id !== id)
   store.set('cameras', cameras)
+
+  // remove stored password
+  keytar.deletePassword(SERVICE_NAME, id)
   event.returnValue = cameras || []
 })
 
 // load camera in the main window
-ipcMain.on('show-camera', (event, id) => {
+ipcMain.on('show-camera', async (event, id) => {
   // find camera in list
-  const credentials = store.get('cameras').find(d => d.id === id)
-  showCamera(credentials)
+  const password = await keytar.getPassword(SERVICE_NAME, id)
+  showCamera(id, password)
   event.returnValue = id
 })
 
@@ -269,11 +330,7 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
             message: 'invalid password'
           })
         } else {
-          addCamera({
-            id,
-            password,
-            name
-          })
+          addCamera(id, password, name)
           event.sender.send('validate-camera-response', {
             status: 'success',
             message: id
@@ -284,11 +341,7 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
       // otherwise, this is a public camera page
       const { name } = await checkPassword(id)
 
-      addCamera({
-        id,
-        password,
-        name
-      })
+      addCamera(id, password, name)
       event.sender.send('validate-camera-response', {
         status: 'success',
         message: id
@@ -303,8 +356,8 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // open the main window
-  showSettings()
+  // load the main window
+  loadMainWindow()
 })
 
 app.on('window-all-closed', () => {
@@ -316,5 +369,9 @@ app.on('window-all-closed', () => {
 // called when the dock icon is clicked
 app.on('activate', () => {
   // open the main window
-  showSettings()
+  mainWindow.show()
+})
+
+app.on('before-quit', () => {
+  app.quitting = true
 })

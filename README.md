@@ -2,11 +2,13 @@
 
 An electron app for showing a nest camera public or password-protected sharing page in a floating window.
 
-## Experimental
+Available for MacOS [Download v0.0.1]
 
-This is an experimental project and currently stores passwords in an insecure manner.  Use at your own risk.
+## Contributing
 
-## How to Use
+This is an open source project I started so I could have a better experience viewing my nest cams.  I'd love contributions and bugfixes if you would like to help out.  Check the issues to see what needs work.
+
+## Local Development
 
 - Clone this repo
 - Install dependencies: `yarn`
@@ -19,4 +21,3 @@ The program will check to see if your camera id and password are valid, and will
 ## How it Works
 
 The electron app is simply a different presentation of the existing nest cam sharing pages.  When you enable sharing (with or without password), the feed is available at https://video.nest.com/live/{camera-id}.  This app is simply loading these shared camera URLs in smaller windows (using electron's `BrowserView` and `BrowserWindow` features.  It also persists the user's camera list, persists passwords for password-protected cameras,  and provides a pop-out view for cameras that always stays on top in MacOS.
-

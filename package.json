@@ -1,6 +1,6 @@
 {
   "name": "cam-view",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "license": "MIT",
   "description": "A Desktop Viewer for Nest Cams",
   "author": {
@@ -20,6 +20,7 @@
     "concurrently": "^5.2.0",
     "electron-is-dev": "^1.2.0",
     "electron-store": "^5.1.1",
+    "keytar": "^5.6.0",
     "node-fetch": "^2.6.0",
     "react": "^16.13.1",
     "react-bootstrap": "^1.0.1",
@@ -61,6 +62,7 @@
   "devDependencies": {
     "electron": "^8.2.5",
     "electron-builder": "^22.6.0",
+    "electron-rebuild": "^1.11.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
@@ -69,6 +71,7 @@
   },
   "build": {
     "appId": "com.example.cam-view",
+    "productName": "Cam View",
     "files": [
       "build/**/*",
       "node_modules/**/*"
