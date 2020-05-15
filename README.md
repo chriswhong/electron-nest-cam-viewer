@@ -1,6 +1,6 @@
 # electron-nest-cam-viewer
 
-An electron app for showing a nest camera public or password-protected sharing page in a floating window.
+An electron app for managing and viewing Nest Cams.
 
 Available for MacOS [Download v0.0.1](https://github.com/chriswhong/electron-nest-cam-viewer/releases/download/v0.0.1/Cam.View-0.0.1.dmg)
 
