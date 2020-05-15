@@ -2,7 +2,21 @@
 
 An electron app for showing a nest camera public or password-protected sharing page in a floating window.
 
-Available for MacOS [Download v0.0.1]
+Available for MacOS [Download v0.0.1](https://github.com/chriswhong/electron-nest-cam-viewer/releases/download/v0.0.1/Cam.View-0.0.1.dmg)
+
+## How to Use
+
+Get the sharing url for a Nest Cam. It looks like `https://video.nest.com/live/xXXxxXxXXx` This can be set up in your camera's settings, where you can share it publicly or with a password.  Either will work with Cam View.
+
+Next, launch Cam View, click '+ Add Camera', and paste in the sharing URL.  If it's public, Cam View will show it in the main window and add it to your Cameras list.  If it requires a password, it will prompt you for the password.  (The password is stored securely in MacOS' keychain)
+
+### Pop-out Cameras
+
+You can pop-out a camera into its own window, which will always remain "on top".  I like to put these in the corner of my display while I am working.
+
+### Remove Cameras
+
+Each camera on the list can be removed by clicking the trashcan icon.
 
 ## Contributing
 
