@@ -4,6 +4,8 @@ An electron app for showing a nest camera public or password-protected sharing p
 
 Available for MacOS [Download v0.0.1](https://github.com/chriswhong/electron-nest-cam-viewer/releases/download/v0.0.1/Cam.View-0.0.1.dmg)
 
+<img width="462" alt="Screen Shot 2020-05-14 at 11 13 24 PM" src="https://user-images.githubusercontent.com/1833820/82008373-82814180-963a-11ea-9049-2e8a56a94e46.png">
+
 ## How to Use
 
 Get the sharing url for a Nest Cam. It looks like `https://video.nest.com/live/xXXxxXxXXx` This can be set up in your camera's settings, where you can share it publicly or with a password.  Either will work with Cam View.
