@@ -18,21 +18,46 @@ const HEIGHT = 560
 
 let saveBoundsCookie
 
-const saveBoundsSoon = () => {
+const saveBoundsSoon = (window) => {
   if (saveBoundsCookie) clearTimeout(saveBoundsCookie)
   saveBoundsCookie = setTimeout(() => {
     saveBoundsCookie = undefined
-    const bounds = mainWindow.getNormalBounds()
-    store.set('mainWindow', { bounds })
-    console.log(store)
+
+    if (window === 'mainWindow') {
+      const bounds = mainWindow.getNormalBounds()
+      store.set('mainWindow', { bounds })
+    } else {
+      const bounds = popOuts[window].getNormalBounds()
+      const cameras = store.get('cameras')
+      const thisCamera = cameras.find(d => d.id === window)
+      thisCamera.bounds = bounds
+      store.set('cameras', cameras)
+    }
   }, 1000)
 }
 
 // opens a new camera in a browserWindow (pop-out)
-const popoutCamera = (id, password) => {
+const popoutCamera = (id, password, screenX, screenY) => {
+  let width = WIDTH
+  let height = parseInt(WIDTH * 0.56) + 22
+  let x = screenX + 20
+  let y = screenY - (height / 2)
+
+  // if bounds exist in the store, open in previous position and size
+  const { bounds } = store.get('cameras').find(d => d.id === id)
+
+  if (bounds) {
+    width = bounds.width
+    height = bounds.height
+    x = bounds.x
+    y = bounds.y
+  }
+
   popOuts[id] = new BrowserWindow({
-    width: WIDTH,
-    height: parseInt(WIDTH * 0.56) + 22
+    width,
+    height,
+    x,
+    y
   })
   // load the nest cam sharing page
   popOuts[id].loadURL(`https://video.nest.com/live/${id}?autoplay=1`)
@@ -70,6 +95,9 @@ const popoutCamera = (id, password) => {
         }
       }, 1000)
     `)
+
+    popOuts[id].on('resize', () => { saveBoundsSoon(id) })
+    popOuts[id].on('move', () => { saveBoundsSoon(id) })
 
     popOuts[id].on('close', (event) => {
       popOuts[id] = null
@@ -240,8 +268,8 @@ const loadMainWindow = () => {
     }
   })
 
-  mainWindow.on('resize', saveBoundsSoon)
-  mainWindow.on('move', saveBoundsSoon)
+  mainWindow.on('resize', () => { saveBoundsSoon('mainWindow') })
+  mainWindow.on('move', () => { saveBoundsSoon('mainWindow') })
 }
 
 // fetch the cameras list from the store
@@ -251,10 +279,10 @@ ipcMain.on('fetch-cameras', (event) => {
 })
 
 // pop out a camera window
-ipcMain.on('open-camera', async (event, id) => {
+ipcMain.on('popout-camera', async (event, id, screenX, screenY) => {
   // find camera in list
   const password = await keytar.getPassword(SERVICE_NAME, id)
-  popoutCamera(id, password)
+  popoutCamera(id, password, screenX, screenY)
 })
 
 // remove camera from store

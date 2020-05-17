@@ -45,13 +45,15 @@ function App () {
     })
   }
 
-  const openCamera = (e, id) => {
+  const popoutCamera = (e, id) => {
     e.stopPropagation()
     // if it's the currently selected camera, hide it
     if (id === selectedCamera) {
       hideCamera(e)
     }
-    ipc.send('open-camera', id)
+
+    const { screenX, screenY } = e
+    ipc.send('popout-camera', id, screenX, screenY)
   }
 
   const removeCamera = (e, id) => {
@@ -141,7 +143,7 @@ function App () {
             )
           }
           <div className='camera-name'>{name}</div>
-          <div className='camera-button' data-tip='Pop-out Camera' onClick={(e) => { openCamera(e, id) }}><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
+          <div className='camera-button' data-tip='Pop-out Camera' onClick={(e) => { popoutCamera(e, id) }}><FontAwesomeIcon icon={faExternalLinkAlt} /></div>
           <div className='camera-button' data-tip='Delete Camera' onClick={(e) => { removeCamera(e, id) }}><FontAwesomeIcon icon={faTrash} /></div>
         </div>
       )
