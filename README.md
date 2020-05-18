@@ -2,7 +2,7 @@
 
 An electron app for managing and viewing Nest Cams.
 
-Available for MacOS [Download v0.0.1](https://github.com/chriswhong/electron-nest-cam-viewer/releases/download/v0.0.1/Cam.View-0.0.1.dmg)
+Available for MacOS [Download v0.0.2](https://github.com/chriswhong/electron-nest-cam-viewer/releases/download/v0.0.2/Cam.View-0.0.2.dmg)
 
 <img width="462" alt="Screen Shot 2020-05-14 at 11 13 24 PM" src="https://user-images.githubusercontent.com/1833820/82008373-82814180-963a-11ea-9049-2e8a56a94e46.png"><img width="462" alt="Screen Shot 2020-05-14 at 11 29 11 PM" src="https://user-images.githubusercontent.com/1833820/82008484-d724bc80-963a-11ea-9222-3e9338c737dd.png">
 
