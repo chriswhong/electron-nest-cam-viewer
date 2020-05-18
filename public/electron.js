@@ -1,4 +1,4 @@
-const { app, screen, BrowserWindow, BrowserView, ipcMain } = require('electron')
+const { app, screen, BrowserWindow, BrowserView, ipcMain, shell } = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
 const fetch = require('node-fetch')
@@ -378,6 +378,10 @@ ipcMain.on('validate-camera', async (event, { id, password }) => {
   } catch (e) {
     console.error('error', e)
   }
+})
+
+ipcMain.on('open-external-link', (event, url) => {
+  shell.openExternal(url)
 })
 
 // This method will be called when Electron has finished

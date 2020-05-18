@@ -11,6 +11,8 @@ import {
   faLock
 } from '@fortawesome/free-solid-svg-icons'
 
+import { faGithub } from '@fortawesome/free-brands-svg-icons'
+
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
 
@@ -90,6 +92,10 @@ function App () {
     setShowPasswordInput(false)
     setCamIdInputValue('')
     setPassword('')
+  }
+
+  const openExternalLink = (url) => {
+    ipc.send('open-external-link', url)
   }
 
   useEffect(() => {
@@ -205,6 +211,11 @@ function App () {
             )
           }
 
+        </div>
+      </div>
+      <div className='footer'>
+        <div className='external-link' onClick={() => openExternalLink('https://github.com/chriswhong/electron-nest-cam-viewer')}>
+          <FontAwesomeIcon data-tip="View Project on Github" icon={faGithub} />
         </div>
       </div>
       <ReactTooltip place="bottom" type="dark" effect="solid"/>
